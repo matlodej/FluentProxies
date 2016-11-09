@@ -12,6 +12,8 @@ namespace FluentProxies.Construction.Utils
 {
     internal static class Validator
     {
+        #region Methods
+
         internal static void Check<T>(ProxyBuilder<T> proxyBuilder)
             where T : class, new()
         {
@@ -19,34 +21,17 @@ namespace FluentProxies.Construction.Utils
 
             if (!properties.Any())
             {
-                throw new ObjectCannotBeProxiedException("No public non-static property setters available.");
+                throw new ObjectCannotBeProxiedException("No public non-static properties available.");
             }
 
-            if (!Instantiator.IsSerializable(proxyBuilder.SourceObject))
+            if (properties.Any(x => x.GetSetMethod() != null && !x.GetSetMethod().IsVirtual))
+            {
+                throw new ObjectCannotBeProxiedException("All public non-static properties must be declared as virtual.");
+            }
+
+            if (!Instantiator.IsSerializable(proxyBuilder.SourceReference))
             {
                 throw new ObjectCannotBeProxiedException("Object is not serializable.");
-            }
-
-            if (proxyBuilder.TypesToImplement.Contains(typeof(INotifyPropertyChanged))
-                && properties.All(x => x.GetSetMethod() == null || !x.GetSetMethod().IsVirtual))
-            {
-                throw new InvalidConfigurationException("To create a proxy implementing INotifyPropertyChanged interface there has to be at least one public non-static virtual property setter available.");
-            }
-
-            if (proxyBuilder.IncludesWrapper
-                && properties.Any(x => x.GetSetMethod() != null && !x.GetSetMethod().IsVirtual))
-            {
-                throw new InvalidConfigurationException("To create a proxy wrapper all public non-static property setters must be virtual.");
-            }
-
-            if (!proxyBuilder.IncludesWrapper && proxyBuilder.SyncsWithSourceObject)
-            {
-                throw new InvalidConfigurationException("Syncing with source object is only available for wrapper proxies. Call .IncludeWrapper() to create a wrapper proxy.");
-            }
-
-            if (proxyBuilder.SyncsWithSourceObject && properties.Any(x => !x.PropertyType.IsValueType && x.PropertyType != typeof(String)))
-            {
-                throw new InvalidConfigurationException("Syncing with source object is not available for objects with reference type properties other than System.String.");
             }
         }
 
@@ -63,5 +48,15 @@ namespace FluentProxies.Construction.Utils
                 return false;
             }
         }
+
+        internal static bool AreEqual(ProxyConfiguration pc1, ProxyConfiguration pc2)
+        {
+            return pc1.SourceType == pc2.SourceType
+                && pc1.SyncsWithReference == pc2.SyncsWithReference
+                && pc1.Implementers.Count == pc2.Implementers.Count
+                && pc1.Implementers.All(x => pc2.Implementers.Contains(x));
+        }
+
+        #endregion
     }
 }

@@ -11,7 +11,36 @@ namespace FluentProxies.Construction.Implementers
 {
     internal class INotifyPropertyChangedImplementer : Implementer
     {
-        internal override Implementer Implement(TypeBuilder typeBuilder)
+        #region Fields and properties
+
+        private static INotifyPropertyChangedImplementer _implInstance;
+
+        private MethodInfo _raisePropertyChanged;
+
+        #endregion
+
+        #region Initialization
+
+        internal static INotifyPropertyChangedImplementer GetImplementer()
+        {
+            if (_implInstance == null)
+            {
+                _implInstance = new INotifyPropertyChangedImplementer(typeof(INotifyPropertyChanged));
+            }
+
+            return _implInstance;
+        }
+
+        private INotifyPropertyChangedImplementer(Type interfaceType)
+            : base(interfaceType)
+        {
+        }
+
+        #endregion
+
+        #region Methods
+
+        internal override void Implement(TypeBuilder typeBuilder)
         {
             MethodInfo delegateCombine = typeof(Delegate).GetMethod("Combine", new Type[] { typeof(Delegate), typeof(Delegate) });
             MethodInfo delegateRemove = typeof(Delegate).GetMethod("Remove", new Type[] { typeof(Delegate), typeof(Delegate) });
@@ -59,6 +88,8 @@ namespace FluentProxies.Construction.Implementers
                 typeof(void),
                 new Type[] { typeof(String) });
 
+            _raisePropertyChanged = raisePropertyChanged;
+
             gen = raisePropertyChanged.GetILGenerator();
 
             Label lblDelegateOk = gen.DefineLabel();
@@ -85,15 +116,15 @@ namespace FluentProxies.Construction.Implementers
             eventBuilder.SetRaiseMethod(raisePropertyChanged);
             eventBuilder.SetAddOnMethod(addPropertyChanged);
             eventBuilder.SetRemoveOnMethod(removePropertyChanged);
-
-            AfterSet = (x, y) =>
-            {
-                x.Emit(OpCodes.Ldarg_0);
-                x.Emit(OpCodes.Ldstr, y.Name);
-                x.Emit(OpCodes.Call, raisePropertyChanged);
-            };
-            
-            return this;
         }
+
+        internal override void AfterSet(ILGenerator gen, PropertyInfo propertyInfo)
+        {
+            gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldstr, propertyInfo.Name);
+            gen.Emit(OpCodes.Call, _raisePropertyChanged);
+        }
+
+        #endregion
     }
 }

@@ -9,27 +9,41 @@ using System.Threading.Tasks;
 
 namespace FluentProxies.Construction.Implementers
 {
-    internal abstract class Implementer
+    public abstract class Implementer
     {
-        internal static Implementer Resolve(Type typeToImplement)
-        {
-            if (typeToImplement == typeof(INotifyPropertyChanged))
-            {
-                return new INotifyPropertyChangedImplementer();
-            }
+        #region Fields and properties
 
-            throw new ArgumentOutOfRangeException(nameof(typeToImplement));
+        internal Type Interface { get; private set; }
+
+        #endregion
+
+        #region Initialization
+
+        public Implementer(Type interfaceType)
+        {
+            Interface = interfaceType;
         }
 
-        internal abstract Implementer Implement(TypeBuilder typeBuilder);
+        #endregion
 
-        internal virtual Action<ILGenerator, PropertyInfo> BeforeGet { get; set; }
-            = (x, y) => { };
+        #region Methods
 
-        internal virtual Action<ILGenerator, PropertyInfo> BeforeSet { get; set; }
-            = (x, y) => { };
+        internal virtual void Implement(TypeBuilder typeBuilder)
+        {
+        }
 
-        internal virtual Action<ILGenerator, PropertyInfo> AfterSet { get; set; }
-            = (x, y) => { };
+        internal virtual void BeforeGet(ILGenerator gen, PropertyInfo propertyInfo)
+        {
+        }
+
+        internal virtual void BeforeSet(ILGenerator gen, PropertyInfo propertyInfo)
+        {
+        }
+
+        internal virtual void AfterSet(ILGenerator gen, PropertyInfo propertyInfo)
+        {
+        }
+
+        #endregion
     }
 }

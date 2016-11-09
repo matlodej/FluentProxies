@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FluentProxies.Construction;
+using FluentProxies.Construction.Implementers;
 using FluentProxies.Construction.Utils;
 using FluentProxies.Enums;
 
@@ -22,15 +23,11 @@ namespace FluentProxies
     public class ProxyBuilder<T>
         where T : class, new()
     {
-        internal T SourceObject { get; private set; }
+        #region Fields and properties
 
-        internal bool IncludesWrapper { get; private set; }
+        internal T SourceReference { get; private set; }
 
-        internal bool SyncsWithSourceObject { get; private set; }
-
-        internal List<Type> TypesToImplement { get; } = new List<Type>();
-
-        internal bool OverridesCache { get; private set; }
+        internal ProxyConfiguration Configuration { get; private set; }
 
         public bool IsValid
         {
@@ -40,37 +37,40 @@ namespace FluentProxies
             }
         }
 
+        #endregion
+
+        #region Initialization
+
         internal ProxyBuilder(T sourceObject)
         {
-            SourceObject = sourceObject;
+            SourceReference = sourceObject;
+            Configuration = new ProxyConfiguration();
         }
 
-        public ProxyBuilder<T> IncludeWrapper()
+        #endregion
+
+        #region Methods
+
+        public ProxyBuilder<T> SyncWithReference()
         {
-            IncludesWrapper = true;
+            Configuration.SyncsWithReference = true;
             return this;
         }
 
-        public ProxyBuilder<T> SyncWithSourceObject()
+        public ProxyBuilder<T> Implement(InterfaceImplementer implementer)
         {
-            SyncsWithSourceObject = true;
-            return this;
-        }
-
-        public ProxyBuilder<T> Implement(Implementations implementations)
-        {
-            if (implementations.HasFlag(Implementations.INotifyPropertyChanged)
-                && !TypesToImplement.Contains(typeof(INotifyPropertyChanged)))
+            if (implementer == InterfaceImplementer.INotifyPropertyChanged
+                && !Configuration.Implementers.Any(x => x is INotifyPropertyChangedImplementer))
             {
-                TypesToImplement.Add(typeof(INotifyPropertyChanged));
+                Configuration.Implementers.Add(INotifyPropertyChangedImplementer.GetImplementer());
             }
 
             return this;
         }
 
-        public ProxyBuilder<T> OverrideCache()
+        public ProxyBuilder<T> Implement(CustomInterfaceImplementer implementer)
         {
-            OverridesCache = true;
+            Configuration.Implementers.Add(implementer);
             return this;
         }
 
@@ -79,5 +79,7 @@ namespace FluentProxies
             Validator.Check(this);
             return new ProxyConstructor<T>(this).Construct();
         }
+
+        #endregion
     }
 }

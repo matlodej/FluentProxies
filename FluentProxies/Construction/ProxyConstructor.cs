@@ -14,45 +14,58 @@ namespace FluentProxies.Construction
     internal class ProxyConstructor<T>
         where T : class, new()
     {
+        #region Constants
+
         private const string WRAPPER_FIELD = "_proxyWrapper";
+
+        #endregion
+
+        #region Fields and properties
+
+        private static readonly ConcurrentDictionary<ProxyConfiguration, Type> _proxyCache = new ConcurrentDictionary<ProxyConfiguration, Type>();
 
         private readonly ProxyBuilder<T> _builder;
 
-        private readonly List<Implementer> _implementers = new List<Implementer>();
+        #endregion
 
-        private static readonly ConcurrentDictionary<Type, Type> _proxiedTypes = new ConcurrentDictionary<Type, Type>();
+        #region Initialization
 
         internal ProxyConstructor(ProxyBuilder<T> proxyBuilder)
         {
             _builder = proxyBuilder;
         }
 
+        #endregion
+
+        #region Methods
+
         internal T Construct()
         {
             Type proxyType;
+
+            ProxyConfiguration cachedConfiguration = _proxyCache.FirstOrDefault(x => Validator.AreEqual(x.Key, _builder.Configuration)).Key;
             
-            if (_builder.OverridesCache || !_proxiedTypes.TryGetValue(typeof(T), out proxyType))
+            if (cachedConfiguration == null || !_proxyCache.TryGetValue(cachedConfiguration, out proxyType))
             {
                 TypeBuilder typeBuilder = CreateTypeBuilder();
 
-                foreach (Type type in _builder.TypesToImplement)
+                foreach (Implementer implementer in _builder.Configuration.Implementers)
                 {
-                    Implementer implementer = Implementer.Resolve(type).Implement(typeBuilder);
-                    _implementers.Add(implementer);
+                    implementer.Implement(typeBuilder);
                 }
 
                 AddProperties(typeBuilder);
 
                 proxyType = typeBuilder.CreateType();
 
-                _proxiedTypes.TryAdd(typeof(T), proxyType);
+                _proxyCache.TryAdd(_builder.Configuration, proxyType);
             }
 
-            T proxy = Instantiator.Clone(_builder.SourceObject, proxyType);
+            T proxy = Instantiator.Clone(_builder.SourceReference, proxyType);
 
-            if (_builder.IncludesWrapper)
+            if (_builder.Configuration.SyncsWithReference)
             {
-                ProxyWrapper<T> proxyWrapper = new ProxyWrapper<T>(_builder, proxy);
+                ProxyWrapper<T> proxyWrapper = new ProxyWrapper<T>(proxy, _builder.SourceReference);
                 proxyType.GetField(WRAPPER_FIELD).SetValue(proxy, proxyWrapper);
             }
 
@@ -69,9 +82,9 @@ namespace FluentProxies.Construction
             TypeBuilder typeBuilder = moduleBuilder.DefineType(typeof(T).Name + "_Proxy",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout,
                 typeof(T),
-                _builder.TypesToImplement.ToArray());
+                _builder.Configuration.Implementers.Select(x => x.Interface).ToArray());
 
-            foreach (Type type in _builder.TypesToImplement)
+            foreach (Type type in _builder.Configuration.Implementers.Select(x => x.Interface))
             {
                 typeBuilder.AddInterfaceImplementation(type);
             }
@@ -82,15 +95,14 @@ namespace FluentProxies.Construction
         private void AddProperties(TypeBuilder typeBuilder)
         {
             FieldBuilder wrapperField = null;
+            ProxyWrapper<T> tmp;
 
-            if (_builder.IncludesWrapper)
+            if (_builder.Configuration.SyncsWithReference)
             {
                 wrapperField = typeBuilder.DefineField(WRAPPER_FIELD, typeof(ProxyWrapper<T>), FieldAttributes.Public);
             }
 
             PropertyInfo[] properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            bool hasComplexProperties = properties.Any(x => !x.PropertyType.IsValueType && x.PropertyType != typeof(String));
 
             foreach (PropertyInfo propertyInfo in properties)
             {
@@ -104,10 +116,21 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = getMethod.GetILGenerator();
 
-                    _implementers.ForEach(x => x.BeforeGet(gen, propertyInfo));
+                    _builder.Configuration.Implementers.ForEach(x => x.BeforeGet(gen, propertyInfo));
 
-                    gen.Emit(OpCodes.Ldarg_0);
-                    gen.Emit(OpCodes.Call, propertyInfo.GetGetMethod());
+                    if (_builder.Configuration.SyncsWithReference)
+                    {
+                        gen.Emit(OpCodes.Ldarg_0);
+                        gen.Emit(OpCodes.Ldfld, wrapperField);
+                        gen.Emit(OpCodes.Call, typeof(ProxyWrapper<T>).GetProperty(nameof(tmp.SourceReference)).GetGetMethod());
+                        gen.Emit(OpCodes.Call, propertyInfo.GetGetMethod());
+                    }
+                    else
+                    {
+                        gen.Emit(OpCodes.Ldarg_0);
+                        gen.Emit(OpCodes.Call, propertyInfo.GetGetMethod());
+                    }
+
                     gen.Emit(OpCodes.Ret);
 
                     propertyBuilder.SetGetMethod(getMethod);
@@ -119,16 +142,10 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = setMethod.GetILGenerator();
 
-                    _implementers.ForEach(x => x.BeforeSet(gen, propertyInfo));
+                    _builder.Configuration.Implementers.ForEach(x => x.BeforeSet(gen, propertyInfo));
 
-                    gen.Emit(OpCodes.Ldarg_0);
-                    gen.Emit(OpCodes.Ldarg_1);
-                    gen.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
-
-                    if (_builder.SyncsWithSourceObject
-                        && !hasComplexProperties)
+                    if (_builder.Configuration.SyncsWithReference)
                     {
-                        ProxyWrapper<T> tmp;
                         Label notInitialized = gen.DefineLabel();
 
                         gen.Emit(OpCodes.Ldarg_0);
@@ -136,19 +153,27 @@ namespace FluentProxies.Construction
                         gen.Emit(OpCodes.Brfalse, notInitialized);
                         gen.Emit(OpCodes.Ldarg_0);
                         gen.Emit(OpCodes.Ldfld, wrapperField);
-                        gen.Emit(OpCodes.Call, typeof(ProxyWrapper<T>).GetProperty(nameof(tmp.SourceObject)).GetGetMethod());
+                        gen.Emit(OpCodes.Call, typeof(ProxyWrapper<T>).GetProperty(nameof(tmp.SourceReference)).GetGetMethod());
                         gen.Emit(OpCodes.Ldarg_1);
                         gen.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
                         gen.MarkLabel(notInitialized);
                     }
+                    else
+                    {
+                        gen.Emit(OpCodes.Ldarg_0);
+                        gen.Emit(OpCodes.Ldarg_1);
+                        gen.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
+                    }
 
-                    _implementers.ForEach(x => x.AfterSet(gen, propertyInfo));
+                    _builder.Configuration.Implementers.ForEach(x => x.AfterSet(gen, propertyInfo));
 
                     gen.Emit(OpCodes.Ret);
-                    
+
                     propertyBuilder.SetSetMethod(setMethod);
                 }
             }
         }
+
+        #endregion
     }
 }

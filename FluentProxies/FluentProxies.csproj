@@ -41,11 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Construction\PropertyDifference.cs" />
-    <Compile Include="Construction\Utils\ObjectInspector.cs" />
-    <Compile Include="Enums\Implementations.cs" />
-    <Compile Include="Enums\ProxyState.cs" />
-    <Compile Include="Exceptions\InvalidConfigurationException.cs" />
+    <Compile Include="Construction\Implementers\CustomInterfaceImplementer.cs" />
+    <Compile Include="Construction\ProxyConfiguration.cs" />
+    <Compile Include="Enums\InterfaceImplementer.cs" />
+    <Compile Include="Enums\PropertyAction.cs" />
     <Compile Include="Exceptions\ObjectCannotBeProxiedException.cs" />
     <Compile Include="Construction\Implementers\Implementer.cs" />
     <Compile Include="Construction\Implementers\INotifyPropertyChangedImplementer.cs" />

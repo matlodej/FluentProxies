@@ -6,12 +6,8 @@ using System.Threading.Tasks;
 
 namespace FluentProxies.Enums
 {
-    public enum ProxyState
+    public enum InterfaceImplementer
     {
-        Unmodified = 0,
-
-        Modified = 1,
-
-        InSync = 2,
+        INotifyPropertyChanged,
     }
 }

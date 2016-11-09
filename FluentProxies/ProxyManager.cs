@@ -9,7 +9,13 @@ namespace FluentProxies
 {
     public static class ProxyManager
     {
+        #region Fields and properties
+
         private static readonly Dictionary<object, object> _wrappers = new Dictionary<object, object>();
+
+        #endregion
+
+        #region Methods
 
         public static ProxyWrapper<T> GetWrapper<T>(T proxy)
             where T : class, new()
@@ -25,5 +31,7 @@ namespace FluentProxies
         {
             _wrappers[proxy] = wrapper;
         }
+
+        #endregion
     }
 }

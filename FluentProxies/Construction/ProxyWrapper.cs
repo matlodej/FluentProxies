@@ -12,70 +12,20 @@ namespace FluentProxies.Construction
     public class ProxyWrapper<T>
         where T : class, new()
     {
-        private readonly ProxyBuilder<T> _builder;
+        #region Fields and properties
 
-        private readonly T _proxy;
+        public T SourceReference { get; private set; }
 
-        private readonly ObjectInspector<T> _objectInspector;
+        #endregion
 
-        public T SourceObject { get; private set; }
+        #region Initialization
 
-        public ProxyState State
+        public ProxyWrapper(T proxy, T sourceReference)
         {
-            get
-            {
-                if (_builder.SyncsWithSourceObject)
-                {
-                    return ProxyState.InSync;
-                }
-
-                if (_objectInspector.AreEqual())
-                {
-                    return ProxyState.Unmodified;
-                }
-
-                return ProxyState.Modified;
-            }
-        }
-
-        public List<PropertyInfo> IncludedProperties
-        {
-            get
-            {
-                return _objectInspector.GetIncludedProperties();
-            }
-        }
-
-        public List<PropertyInfo> OmittedProperties
-        {
-            get
-            {
-                return _objectInspector.GetOmittedProperties();
-            }
-        }
-
-        public List<PropertyDifference> Changes
-        {
-            get
-            {
-                return _objectInspector.GetDifferences();
-            }
-        }
-
-        public ProxyWrapper(ProxyBuilder<T> builder, T proxy)
-        {
-            _builder = builder;
-            _proxy = proxy;
-            _objectInspector = new ObjectInspector<T>(builder.SourceObject, proxy);
-
-            SourceObject = builder.SourceObject;
-
+            SourceReference = sourceReference;
             ProxyManager.AddWrapper(proxy, this);
         }
 
-        public void CommitChanges()
-        {
-            _objectInspector.CommitChangesToSource();
-        }
+        #endregion
     }
 }

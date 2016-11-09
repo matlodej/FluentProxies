@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace FluentProxies.Enums
 {
-    [Flags]
-    public enum Implementations
+    public enum PropertyAction
     {
-        INotifyPropertyChanged = 1,
+        BeforeGet,
+
+        BeforeSet,
+
+        AfterSet,
     }
 }

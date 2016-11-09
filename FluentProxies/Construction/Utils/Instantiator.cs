@@ -11,6 +11,8 @@ namespace FluentProxies.Construction.Utils
 {
     internal static class Instantiator
     {
+        #region Methods
+
         internal static T Clone<T>(T sourceObject, Type targetType)
             where T : class, new()
         {
@@ -25,7 +27,7 @@ namespace FluentProxies.Construction.Utils
             DataContractJsonSerializer deserializer = new DataContractJsonSerializer(targetType, new DataContractJsonSerializerSettings { DateTimeFormat = dateFormat });
 
             T clone = (T)deserializer.ReadObject(ms);
-            
+
             return clone;
         }
 
@@ -62,5 +64,7 @@ namespace FluentProxies.Construction.Utils
             T result;
             return TryClone(sourceObject, out result);
         }
+
+        #endregion
     }
 }
