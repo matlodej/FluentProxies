@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentProxies.Enums;
 using FluentProxies.Exceptions;
+using FluentProxies.Models;
 
 namespace FluentProxies.Construction.Utils
 {
@@ -53,8 +54,7 @@ namespace FluentProxies.Construction.Utils
         {
             return pc1.SourceType == pc2.SourceType
                 && pc1.SyncsWithReference == pc2.SyncsWithReference
-                && pc1.Implementers.Count == pc2.Implementers.Count
-                && pc1.Implementers.All(x => pc2.Implementers.Contains(x));
+                && pc1.Implementations == pc2.Implementations;
         }
 
         #endregion

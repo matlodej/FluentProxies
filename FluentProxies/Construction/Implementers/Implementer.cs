@@ -6,31 +6,27 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using FluentProxies.Enums;
 
 namespace FluentProxies.Construction.Implementers
 {
-    public abstract class Implementer
+    internal abstract class Implementer
     {
-        #region Fields and properties
-
-        internal Type Interface { get; private set; }
-
-        #endregion
-
-        #region Initialization
-
-        public Implementer(Type interfaceType)
+        internal static List<Implementer> Resolve(Implementations implementations)
         {
-            Interface = interfaceType;
+            List<Implementer> implementers = new List<Implementer>();
+
+            if (implementations.HasFlag(Implementations.INotifyPropertyChanged))
+            {
+                implementers.Add(new INotifyPropertyChangedImplementer());
+            }
+
+            return implementers;
         }
 
-        #endregion
+        internal abstract Type Interface { get; }
 
-        #region Methods
-
-        internal virtual void Implement(TypeBuilder typeBuilder)
-        {
-        }
+        internal abstract void Implement(TypeBuilder typeBuilder);
 
         internal virtual void BeforeGet(ILGenerator gen, PropertyInfo propertyInfo)
         {
@@ -43,7 +39,5 @@ namespace FluentProxies.Construction.Implementers
         internal virtual void AfterSet(ILGenerator gen, PropertyInfo propertyInfo)
         {
         }
-
-        #endregion
     }
 }

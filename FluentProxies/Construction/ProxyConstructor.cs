@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentProxies.Construction.Implementers;
 using FluentProxies.Construction.Utils;
+using FluentProxies.Models;
 
 namespace FluentProxies.Construction
 {
@@ -26,6 +27,8 @@ namespace FluentProxies.Construction
 
         private readonly ProxyBuilder<T> _builder;
 
+        private readonly List<Implementer> _implementers;
+
         #endregion
 
         #region Initialization
@@ -33,6 +36,7 @@ namespace FluentProxies.Construction
         internal ProxyConstructor(ProxyBuilder<T> proxyBuilder)
         {
             _builder = proxyBuilder;
+            _implementers = Implementer.Resolve(proxyBuilder.Configuration.Implementations);
         }
 
         #endregion
@@ -49,7 +53,7 @@ namespace FluentProxies.Construction
             {
                 TypeBuilder typeBuilder = CreateTypeBuilder();
 
-                foreach (Implementer implementer in _builder.Configuration.Implementers)
+                foreach (Implementer implementer in _implementers)
                 {
                     implementer.Implement(typeBuilder);
                 }
@@ -82,9 +86,9 @@ namespace FluentProxies.Construction
             TypeBuilder typeBuilder = moduleBuilder.DefineType(typeof(T).Name + "_Proxy",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout,
                 typeof(T),
-                _builder.Configuration.Implementers.Select(x => x.Interface).ToArray());
+                _implementers.Select(x => x.Interface).ToArray());
 
-            foreach (Type type in _builder.Configuration.Implementers.Select(x => x.Interface))
+            foreach (Type type in _implementers.Select(x => x.Interface))
             {
                 typeBuilder.AddInterfaceImplementation(type);
             }
@@ -116,7 +120,7 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = getMethod.GetILGenerator();
 
-                    _builder.Configuration.Implementers.ForEach(x => x.BeforeGet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.BeforeGet(gen, propertyInfo));
 
                     if (_builder.Configuration.SyncsWithReference)
                     {
@@ -142,7 +146,7 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = setMethod.GetILGenerator();
 
-                    _builder.Configuration.Implementers.ForEach(x => x.BeforeSet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.BeforeSet(gen, propertyInfo));
 
                     if (_builder.Configuration.SyncsWithReference)
                     {
@@ -165,7 +169,7 @@ namespace FluentProxies.Construction
                         gen.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
                     }
 
-                    _builder.Configuration.Implementers.ForEach(x => x.AfterSet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.AfterSet(gen, propertyInfo));
 
                     gen.Emit(OpCodes.Ret);
 

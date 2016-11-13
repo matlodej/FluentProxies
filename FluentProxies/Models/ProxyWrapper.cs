@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using FluentProxies.Construction.Utils;
 using FluentProxies.Enums;
 
-namespace FluentProxies.Construction
+namespace FluentProxies.Models
 {
     public class ProxyWrapper<T>
         where T : class, new()

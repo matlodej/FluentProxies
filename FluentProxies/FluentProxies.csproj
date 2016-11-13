@@ -41,10 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Construction\Implementers\CustomInterfaceImplementer.cs" />
-    <Compile Include="Construction\ProxyConfiguration.cs" />
-    <Compile Include="Enums\InterfaceImplementer.cs" />
-    <Compile Include="Enums\PropertyAction.cs" />
+    <Compile Include="Models\ProxyConfiguration.cs" />
+    <Compile Include="Enums\Implementations.cs" />
     <Compile Include="Exceptions\ObjectCannotBeProxiedException.cs" />
     <Compile Include="Construction\Implementers\Implementer.cs" />
     <Compile Include="Construction\Implementers\INotifyPropertyChangedImplementer.cs" />
@@ -53,7 +51,7 @@
     <Compile Include="ProxyBuilder.cs" />
     <Compile Include="Construction\ProxyConstructor.cs" />
     <Compile Include="ProxyManager.cs" />
-    <Compile Include="Construction\ProxyWrapper.cs" />
+    <Compile Include="Models\ProxyWrapper.cs" />
     <Compile Include="Construction\Utils\Validator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

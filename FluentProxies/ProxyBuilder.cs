@@ -8,6 +8,7 @@ using FluentProxies.Construction;
 using FluentProxies.Construction.Implementers;
 using FluentProxies.Construction.Utils;
 using FluentProxies.Enums;
+using FluentProxies.Models;
 
 namespace FluentProxies
 {
@@ -41,9 +42,9 @@ namespace FluentProxies
 
         #region Initialization
 
-        internal ProxyBuilder(T sourceObject)
+        internal ProxyBuilder(T sourceReference)
         {
-            SourceReference = sourceObject;
+            SourceReference = sourceReference;
             Configuration = new ProxyConfiguration();
         }
 
@@ -57,20 +58,9 @@ namespace FluentProxies
             return this;
         }
 
-        public ProxyBuilder<T> Implement(InterfaceImplementer implementer)
+        public ProxyBuilder<T> Implement(Implementations implementations)
         {
-            if (implementer == InterfaceImplementer.INotifyPropertyChanged
-                && !Configuration.Implementers.Any(x => x is INotifyPropertyChangedImplementer))
-            {
-                Configuration.Implementers.Add(INotifyPropertyChangedImplementer.GetImplementer());
-            }
-
-            return this;
-        }
-
-        public ProxyBuilder<T> Implement(CustomInterfaceImplementer implementer)
-        {
-            Configuration.Implementers.Add(implementer);
+            Configuration.Implementations |= Implementations.INotifyPropertyChanged;
             return this;
         }
 

@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FluentProxies.Construction.Implementers;
+using FluentProxies.Enums;
 
-namespace FluentProxies.Construction
+namespace FluentProxies.Models
 {
     internal class ProxyConfiguration
     {
@@ -13,6 +14,6 @@ namespace FluentProxies.Construction
 
         internal bool SyncsWithReference { get; set; }
 
-        internal List<Implementer> Implementers { get; } = new List<Implementer>();
+        internal Implementations Implementations { get; set; }
     }
 }

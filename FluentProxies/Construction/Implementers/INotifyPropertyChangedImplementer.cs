@@ -13,27 +13,14 @@ namespace FluentProxies.Construction.Implementers
     {
         #region Fields and properties
 
-        private static INotifyPropertyChangedImplementer _implInstance;
-
         private MethodInfo _raisePropertyChanged;
 
-        #endregion
-
-        #region Initialization
-
-        internal static INotifyPropertyChangedImplementer GetImplementer()
+        internal override Type Interface
         {
-            if (_implInstance == null)
+            get
             {
-                _implInstance = new INotifyPropertyChangedImplementer(typeof(INotifyPropertyChanged));
+                return typeof(INotifyPropertyChanged);
             }
-
-            return _implInstance;
-        }
-
-        private INotifyPropertyChangedImplementer(Type interfaceType)
-            : base(interfaceType)
-        {
         }
 
         #endregion
