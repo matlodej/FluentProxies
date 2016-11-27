@@ -7,12 +7,10 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentProxies.Construction.Implementers
+namespace FluentProxies.Implementers
 {
     internal class INotifyPropertyChangedImplementer : Implementer
     {
-        #region Fields and properties
-
         private MethodInfo _raisePropertyChanged;
 
         internal override Type Interface
@@ -22,10 +20,6 @@ namespace FluentProxies.Construction.Implementers
                 return typeof(INotifyPropertyChanged);
             }
         }
-
-        #endregion
-
-        #region Methods
 
         internal override void Implement(TypeBuilder typeBuilder)
         {
@@ -111,7 +105,5 @@ namespace FluentProxies.Construction.Implementers
             gen.Emit(OpCodes.Ldstr, propertyInfo.Name);
             gen.Emit(OpCodes.Call, _raisePropertyChanged);
         }
-
-        #endregion
     }
 }

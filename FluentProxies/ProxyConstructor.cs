@@ -1,55 +1,36 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using FluentProxies.Helpers;
+using FluentProxies.Implementers;
+using FluentProxies.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using FluentProxies.Construction.Implementers;
-using FluentProxies.Construction.Utils;
-using FluentProxies.Models;
 
-namespace FluentProxies.Construction
+namespace FluentProxies
 {
     internal class ProxyConstructor<T>
         where T : class, new()
     {
-        #region Constants
-
         private const string WRAPPER_FIELD = "_proxyWrapper";
-
-        #endregion
-
-        #region Fields and properties
-
-        private static readonly ConcurrentDictionary<ProxyConfiguration, Type> _proxyCache = new ConcurrentDictionary<ProxyConfiguration, Type>();
 
         private readonly ProxyBuilder<T> _builder;
 
         private readonly List<Implementer> _implementers;
 
-        #endregion
-
-        #region Initialization
-
         internal ProxyConstructor(ProxyBuilder<T> proxyBuilder)
         {
             _builder = proxyBuilder;
-            _implementers = Implementer.Resolve(proxyBuilder.Configuration.Implementations);
+            _implementers = Implementer.Resolve(proxyBuilder.Blueprint.Implementations);
         }
-
-        #endregion
-
-        #region Methods
 
         internal T Construct()
         {
-            Type proxyType;
+            Type proxyType = Cache.Types.GetAll(_builder.Blueprint, (x, y) => Validator.AreEqual(x, y)).FirstOrDefault();
 
-            ProxyConfiguration cachedConfiguration = _proxyCache.FirstOrDefault(x => Validator.AreEqual(x.Key, _builder.Configuration)).Key;
-            
-            if (cachedConfiguration == null || !_proxyCache.TryGetValue(cachedConfiguration, out proxyType))
+            if (proxyType is null)
             {
                 TypeBuilder typeBuilder = CreateTypeBuilder();
 
@@ -58,19 +39,22 @@ namespace FluentProxies.Construction
                     implementer.Implement(typeBuilder);
                 }
 
-                AddProperties(typeBuilder);
+                OverrideBaseProperties(typeBuilder);
+                AddCustomProperties(typeBuilder);
 
                 proxyType = typeBuilder.CreateType();
 
-                _proxyCache.TryAdd(_builder.Configuration, proxyType);
+                Cache.Types.TryAdd(_builder.Blueprint, proxyType);
             }
 
             T proxy = Instantiator.Clone(_builder.SourceReference, proxyType);
 
-            if (_builder.Configuration.SyncsWithReference)
+            if (_builder.Blueprint.SyncsWithReference)
             {
-                ProxyWrapper<T> proxyWrapper = new ProxyWrapper<T>(proxy, _builder.SourceReference);
+                ProxyWrapper<T> proxyWrapper = new ProxyWrapper<T>(_builder.SourceReference);
                 proxyType.GetField(WRAPPER_FIELD).SetValue(proxy, proxyWrapper);
+
+                Cache.Wrappers.TryAdd(proxy, proxyWrapper);
             }
 
             return proxy;
@@ -78,6 +62,10 @@ namespace FluentProxies.Construction
 
         private TypeBuilder CreateTypeBuilder()
         {
+            Type[] interfaces = _implementers.Select(x => x.Interface)
+                .Concat(_builder.Blueprint.Interfaces.Select(x => x.Type).Distinct())
+                .ToArray();
+
             AssemblyName assemblyName = new AssemblyName("NotifiableProxy.dll");
 
             AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
@@ -86,22 +74,22 @@ namespace FluentProxies.Construction
             TypeBuilder typeBuilder = moduleBuilder.DefineType(typeof(T).Name + "_Proxy",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout,
                 typeof(T),
-                _implementers.Select(x => x.Interface).ToArray());
+                interfaces);
 
-            foreach (Type type in _implementers.Select(x => x.Interface))
+            foreach (Type i in interfaces)
             {
-                typeBuilder.AddInterfaceImplementation(type);
+                typeBuilder.AddInterfaceImplementation(i);
             }
 
             return typeBuilder;
         }
 
-        private void AddProperties(TypeBuilder typeBuilder)
+        private void OverrideBaseProperties(TypeBuilder typeBuilder)
         {
             FieldBuilder wrapperField = null;
             ProxyWrapper<T> tmp;
 
-            if (_builder.Configuration.SyncsWithReference)
+            if (_builder.Blueprint.SyncsWithReference)
             {
                 wrapperField = typeBuilder.DefineField(WRAPPER_FIELD, typeof(ProxyWrapper<T>), FieldAttributes.Public);
             }
@@ -120,9 +108,9 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = getMethod.GetILGenerator();
 
-                    _implementers.ForEach(x => x.BeforeGet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.BeforeGet(gen, propertyBuilder));
 
-                    if (_builder.Configuration.SyncsWithReference)
+                    if (_builder.Blueprint.SyncsWithReference)
                     {
                         gen.Emit(OpCodes.Ldarg_0);
                         gen.Emit(OpCodes.Ldfld, wrapperField);
@@ -146,9 +134,9 @@ namespace FluentProxies.Construction
 
                     ILGenerator gen = setMethod.GetILGenerator();
 
-                    _implementers.ForEach(x => x.BeforeSet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.BeforeSet(gen, propertyBuilder));
 
-                    if (_builder.Configuration.SyncsWithReference)
+                    if (_builder.Blueprint.SyncsWithReference)
                     {
                         Label notInitialized = gen.DefineLabel();
 
@@ -169,7 +157,7 @@ namespace FluentProxies.Construction
                         gen.Emit(OpCodes.Call, propertyInfo.GetSetMethod());
                     }
 
-                    _implementers.ForEach(x => x.AfterSet(gen, propertyInfo));
+                    _implementers.ForEach(x => x.AfterSet(gen, propertyBuilder));
 
                     gen.Emit(OpCodes.Ret);
 
@@ -178,6 +166,44 @@ namespace FluentProxies.Construction
             }
         }
 
-        #endregion
+        private void AddCustomProperties(TypeBuilder typeBuilder)
+        {
+            foreach (PropertyModel propertyModel in _builder.Blueprint.Properties)
+            {
+                PropertyBuilder propertyBuilder = typeBuilder.DefineProperty(propertyModel.Name, PropertyAttributes.None, propertyModel.Type, Type.EmptyTypes);
+
+                MethodAttributes getSetAttr = MethodAttributes.Public | MethodAttributes.Virtual;
+
+                FieldBuilder fieldBuilder = typeBuilder.DefineField($"_{Char.ToLower(propertyModel.Name[0])}{propertyModel.Name.Substring(1)}", propertyModel.Type, FieldAttributes.Private);
+
+                MethodBuilder getMethod = typeBuilder.DefineMethod("get_" + propertyModel.Name, getSetAttr, propertyModel.Type, Type.EmptyTypes);
+
+                ILGenerator gen = getMethod.GetILGenerator();
+
+                _implementers.ForEach(x => x.BeforeGet(gen, propertyBuilder));
+
+                gen.Emit(OpCodes.Ldarg_0);
+                gen.Emit(OpCodes.Ldfld, fieldBuilder);
+                gen.Emit(OpCodes.Ret);
+
+                propertyBuilder.SetGetMethod(getMethod);
+
+                MethodBuilder setMethod = typeBuilder.DefineMethod("set_" + propertyModel.Name, getSetAttr, null, new Type[] { propertyModel.Type });
+
+                gen = setMethod.GetILGenerator();
+
+                _implementers.ForEach(x => x.BeforeSet(gen, propertyBuilder));
+
+                gen.Emit(OpCodes.Ldarg_0);
+                gen.Emit(OpCodes.Ldarg_1);
+                gen.Emit(OpCodes.Stfld, fieldBuilder);
+
+                _implementers.ForEach(x => x.AfterSet(gen, propertyBuilder));
+
+                gen.Emit(OpCodes.Ret);
+
+                propertyBuilder.SetSetMethod(setMethod);
+            }
+        }
     }
 }

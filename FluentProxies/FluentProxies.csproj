@@ -41,19 +41,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\ProxyConfiguration.cs" />
+    <Compile Include="Helpers\Cache.cs" />
     <Compile Include="Enums\Implementations.cs" />
-    <Compile Include="Exceptions\ObjectCannotBeProxiedException.cs" />
-    <Compile Include="Construction\Implementers\Implementer.cs" />
-    <Compile Include="Construction\Implementers\INotifyPropertyChangedImplementer.cs" />
-    <Compile Include="Construction\Utils\Instantiator.cs" />
+    <Compile Include="Implementers\Implementer.cs" />
+    <Compile Include="Implementers\INotifyPropertyChangedImplementer.cs" />
+    <Compile Include="Helpers\Instantiator.cs" />
+    <Compile Include="Models\InterfaceModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Models\PropertyModel.cs" />
+    <Compile Include="Models\ProxyBlueprint.cs" />
     <Compile Include="ProxyBuilder.cs" />
-    <Compile Include="Construction\ProxyConstructor.cs" />
-    <Compile Include="ProxyManager.cs" />
-    <Compile Include="Models\ProxyWrapper.cs" />
-    <Compile Include="Construction\Utils\Validator.cs" />
+    <Compile Include="ProxyConstructor.cs" />
+    <Compile Include="ProxyWrapper.cs" />
+    <Compile Include="Helpers\Validator.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

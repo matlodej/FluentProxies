@@ -7,12 +7,10 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentProxies.Construction.Utils
+namespace FluentProxies.Helpers
 {
     internal static class Instantiator
     {
-        #region Methods
-
         internal static T Clone<T>(T sourceObject, Type targetType)
             where T : class, new()
         {
@@ -57,14 +55,5 @@ namespace FluentProxies.Construction.Utils
         {
             return TryClone(sourceObject, typeof(T), out clone);
         }
-
-        internal static bool IsSerializable<T>(T sourceObject)
-            where T : class, new()
-        {
-            T result;
-            return TryClone(sourceObject, out result);
-        }
-
-        #endregion
     }
 }

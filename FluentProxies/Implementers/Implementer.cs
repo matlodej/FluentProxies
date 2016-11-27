@@ -1,14 +1,13 @@
-﻿using System;
+﻿using FluentProxies.Enums;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using FluentProxies.Enums;
 
-namespace FluentProxies.Construction.Implementers
+namespace FluentProxies.Implementers
 {
     internal abstract class Implementer
     {
