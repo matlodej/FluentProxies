@@ -2,6 +2,13 @@
 
 A library that allows for creation of dynamic proxies that provide additional functionality to existing objects, such as implementing the ```INotifyPropertyChanged``` interface or adding custom properties and interfaces.
 
+##Installation
+
+Via [NuGet](https://www.nuget.org/packages/FluentProxies/1.0.0):
+```
+PM> Install-Package FluentProxies
+```
+
 ##Usage
 
 To create a proxy, call the ```CreateProxy``` method on the ```ProxyBuilder``` class. Add any desired functionality to a proxy using method chaining on the builder object. When you are done, call the ```Build``` method to build the proxy using the provided configuration.
