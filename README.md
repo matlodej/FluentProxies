@@ -1,6 +1,6 @@
 # FluentProxies
 
-A library that allows for creation of dynamic proxies that add additional functionality to existing objects, such as implementing the ```INotifyPropertyChanged``` interface or adding custom properties and interfaces.
+A library that allows for creation of dynamic proxies that provide additional functionality to existing objects, such as implementing the ```INotifyPropertyChanged``` interface or adding custom properties and interfaces.
 
 ##Usage
 
