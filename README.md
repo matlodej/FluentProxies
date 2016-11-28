@@ -26,6 +26,10 @@ Person proxy = ProxyBuilder.CreateProxy(person)
   .Build();
 ```
 
+##Prerequisites
+
+To create a proxy, the object must define at least one public, non-static property. Additionally, all public, non-static properties must be marked as ```virtual```. You can check for any configuration errors before building a proxy by checking the ```IsValid``` property. However, the build method will still throw an exception is some cases (for example, if you define a custom interface on a proxy without providing all of the necessary interface members).
+
 ###Syncing with reference
 
 Calling the ```SyncWithReference``` method on a builder object will make it so the properties on the proxy object itself will have no value of their own, instead they will be linked to the getters and setters of properties on the source object the proxy was created from.
@@ -86,7 +90,3 @@ If you chose the option to sync with reference, a property of type ```ProxyWrapp
 ProxyWrapper<Person> wrapper = ProxyBuilder.GetWrapper<Person>(proxy);
 wrapper.SourceReference.Name = "Ryan";
 ```
-
-##Prerequisites
-
-To create a proxy, the object must define at least one public, non-static property. Additionally, all public, non-static properties must be marked as ```virtual```. You can check for any configuration errors before building a proxy by checking the ```IsValid``` property. However, the build method will still throw an exception is some cases (for example, if you define a custom interface on a proxy without providing all of the necessary interface members).
