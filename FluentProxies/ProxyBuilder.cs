@@ -66,6 +66,7 @@ namespace FluentProxies
         internal ProxyBuilder(T sourceReference)
         {
             SourceReference = sourceReference;
+            Blueprint.SourceType = typeof(T);
         }
 
         /// <summary>
