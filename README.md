@@ -2,14 +2,14 @@
 
 A library that allows for creation of dynamic proxies that provide additional functionality to existing objects, such as implementing the ```INotifyPropertyChanged``` interface or adding custom properties and interfaces.
 
-##Installation
+## Installation
 
 Via [NuGet](https://www.nuget.org/packages/FluentProxies/1.0.0):
 ```
 PM> Install-Package FluentProxies
 ```
 
-##Usage
+## Usage
 
 To create a proxy, call the ```CreateProxy``` method on the ```ProxyBuilder``` class. Add any desired functionality to a proxy using method chaining on the builder object. When you are done, call the ```Build``` method to build the proxy using the provided configuration.
 
@@ -26,11 +26,11 @@ Person proxy = ProxyBuilder.CreateProxy(person)
   .Build();
 ```
 
-##Prerequisites
+## Prerequisites
 
 To create a proxy, the object must define at least one public, non-static property. Additionally, all public, non-static properties must be marked as ```virtual```. You can check for any configuration errors before building a proxy by checking the ```IsValid``` property. However, the build method will still throw an exception is some cases (for example, if you define a custom interface on a proxy without providing all of the necessary interface members).
 
-###Syncing with reference
+### Syncing with reference
 
 Calling the ```SyncWithReference``` method on a builder object will make it so the properties on the proxy object itself will have no value of their own, instead they will be linked to the getters and setters of properties on the source object the proxy was created from.
 
@@ -52,7 +52,7 @@ Nick
 
 If you do not choose to sync with reference, the proxy object will retain the property values at the moment of proxy creation, but will not influence or be influenced by the original object from that point onwards - the proxy will be an entirely different instance with no connection to the original object it was created from.
 
-###Implementations
+### Implementations
 
 You can add one of the predefined implementations to a proxy using the ```Implement``` method. The snippet below will create a proxy implementing the ```INotifyPropertyChanged``` interface on all of its public, non-static properties.
 
@@ -62,7 +62,7 @@ Person proxy = ProxyBuilder.CreateProxy(person)
   .Build();
 ```
 
-###Custom properties
+### Custom properties
 
 You can add a simple public property to a proxy by calling the ```AddProperty``` method.
 
@@ -72,7 +72,7 @@ Person proxy = ProxyBuilder.CreateProxy(person)
   .Build();
 ```
 
-###Custom interfaces
+### Custom interfaces
 
 You can also make the proxy implement a custom interface. The proxy must provide all of the necessary interface members, otherwise an exception will be thrown when calling the ```Build``` method.
 
@@ -82,7 +82,7 @@ Person proxy = ProxyBuilder.CreateProxy(person)
   .Build();
 ```
 
-###Proxy wrappers
+### Proxy wrappers
 
 If you chose the option to sync with reference, a property of type ```ProxyWrapper<T>``` will be added to a proxy. The wrapper contains the reference to the original object the proxy was created from. You can access the wrapper by calling the ```GetWrapper<T>``` method on the ```ProxyBuilder``` class.
 
